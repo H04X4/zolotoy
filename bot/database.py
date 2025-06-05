@@ -6,7 +6,6 @@ from dataclasses import dataclass
 
 
 class ProductModel(BaseModel):
-    """Модель данных товара"""
     id: int
     article: str
     image: str
@@ -19,11 +18,9 @@ class ProductModel(BaseModel):
 
 @dataclass
 class Database:
-    """Класс для работы с базой данных"""
     pool: Optional[asyncpg.Pool] = None
 
     async def initialize(self) -> None:
-        """Инициализация подключения к БД"""
         try:
             self.pool = await asyncpg.create_pool(
                 user="karaevvalera032gmail.com",
@@ -36,7 +33,7 @@ class Database:
             print(f"Ошибка подключения к БД: {e}")
 
     async def get_product_by_article(self, article: str) -> Optional[ProductModel]:
-        """Получение информации о товаре по артикулу"""
+
         if not self.pool:
             return None
 
