@@ -39,7 +39,7 @@ class BotHandler:
         await state.set_state(BotStates.waiting_for_article)
 
     async def handle_article(self, message: Message, state: FSMContext) -> None:
-        """Обработчик ввода артикула"""
+       
         if not self.db.pool:
             await message.answer("❌ Ошибка подключения к базе данных. Попробуйте позже.")
             return
@@ -81,7 +81,7 @@ class BotHandler:
 
 
 async def main() -> None:
-    """Основная функция запуска бота"""
+  
     bot = Bot(
         token=TELEGRAM_TOKEN,
         default=DefaultBotProperties(parse_mode=ParseMode.HTML)
