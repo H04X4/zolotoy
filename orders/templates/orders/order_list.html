@@ -1,0 +1,68 @@
+{% load static %}
+{% load order_tags %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Управление заказами</title>
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Управление заказами</h1>
+        <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+        {% if products %}
+        <table data-update-url="{% url 'update_order' %}">
+            <thead>
+                <tr>
+                    <th><a href="?sort=article" class="{% if sort_by == 'article' %}active{% endif %}">Артикул</a></th>
+                    <th>Изображение</th>
+                    <th><a href="?sort=stock" class="{% if sort_by == 'stock' %}active{% endif %}">Остаток</a></th>
+                    <th>Наличие в магазинах</th>
+                    <th><a href="?sort=cost_price" class="{% if sort_by == 'cost_price' %}active{% endif %}">Себестоимость (руб.)</a></th>
+                    <th><a href="?sort=order_quantity" class="{% if sort_by == 'order_quantity' %}active{% endif %}">Количество для заказа</a></th>
+                    <th>Сумма строки (руб.)</th>
+                    <th>Комментарий</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for product in products %}
+                <tr data-product-id="{{ product.id }}">
+                    <td>{{ product.article }}</td>
+                    <td>
+                        <img src="{{ product.image|default:'https://via.placeholder.com/50' }}"
+                             alt="{{ product.article }}"
+                             class="product-image"
+                             onerror="this.src='https://via.placeholder.com/50';">
+                    </td>
+                    <td>{{ product.stock }}</td>
+                    <td>{{ product.store_presence }}</td>
+                    <td>{{ product.cost_price|floatformat:2 }}</td>
+                    <td>
+                        <input type="number"
+                               class="order-quantity"
+                               value="{{ product.order_quantity }}"
+                               min="0"
+                               data-initial-value="{{ product.order_quantity }}">
+                    </td>
+                    <td class="line-total">{{ product.order_quantity|floatformat:2|multiply:product.cost_price }}</td>
+                    <td>
+                        <textarea class="comment"
+                                  placeholder="Введите комментарий">{{ product.comment }}</textarea>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <h2>Итоговая сумма: <span id="total-sum">{{ total_sum|floatformat:2 }}</span> руб.</h2>
+        {% else %}
+        <p class="no-data">Нет данных для отображения. Пожалуйста, загрузите данные через админ-панель.</p>
+        {% endif %}
+        <div class="loading-spinner" style="display: none;">Загрузка...</div>
+    </div>
+    <script src="{% static 'js/scripts.js' %}"></script>
+</body>
+</html>
