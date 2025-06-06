@@ -23,7 +23,7 @@ class Database:
     async def initialize(self) -> None:
         try:
             self.pool = await asyncpg.create_pool(
-                user="karaevvalera032gmail.com",
+                user="",
                 password="",  
                 database="order_management_dbs",
                 host="localhost",
