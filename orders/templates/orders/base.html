@@ -1,0 +1,91 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Управление заказами{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        .auth-container {
+            max-width: 400px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .auth-form p {
+            margin-bottom: 15px;
+        }
+        .auth-form label {
+            font-weight: bold;
+        }
+        .auth-form input, .auth-form button {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .auth-form button {
+            background-color: #1a73e8;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+        }
+        .auth-form button:hover {
+            background-color: #1557b0;
+        }
+        .errornote {
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 10px;
+            border: 1px solid #f5c6cb;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+        .messages li {
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+        }
+        .messages .success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .messages .error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .navbar {
+            background-color: #1a73e8;
+            padding: 10px;
+            margin-bottom: 20px;
+        }
+        .navbar a, .navbar span {
+            color: #fff;
+            margin-right: 15px;
+            text-decoration: none;
+        }
+        .navbar a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        {% if user.is_authenticated %}
+            <a href="{% url 'order_list' %}">Заказы</a>
+            <span>Привет, {{ user.username }} (№{% if user.profile.unique_number %}{{ user.profile.unique_number }}{% else %}—{% endif %})!</span>
+            <a href="{% url 'logout' %}">Выйти</a>
+        {% else %}
+            <a href="{% url 'login' %}">Вход</a>
+            <a href="{% url 'register' %}">Регистрация</a>
+        {% endif %}
+    </div>
+    {% block content %}
+    {% endblock %}
+</body>
+</html>

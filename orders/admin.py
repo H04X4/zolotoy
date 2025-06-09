@@ -1,19 +1,22 @@
 from django.contrib import admin
-from .models import Product
+from .models import Product, UserProfile
 import pandas as pd
 from django import forms
 from django.urls import path
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from django.contrib import messages
+from django.contrib.auth.models import User
+from django.contrib.auth.admin import UserAdmin
+
+admin.site.unregister(User)
 
 class ExcelUploadForm(forms.Form):
     excel_file = forms.FileField(label="Файл Excel", help_text="Выберите файл в формате .xls или .xlsx")
 
-    
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ['article', 'stock', 'store_presence', 'cost_price', 'order_quantity', 'comment']
+    list_display = ['article', 'stock', 'store_presence', 'cost_price', 'order_quantity', 'comment', 'unique_number']
     change_list_template = 'admin/product_change_list.html'
 
     def get_urls(self):
@@ -32,7 +35,6 @@ class ProductAdmin(admin.ModelAdmin):
 
             if form.is_valid():
                 excel_file = request.FILES['excel_file']
-
                 if not excel_file.name.lower().endswith(('.xls', '.xlsx')):
                     messages.error(request, "Неверный формат файла. Используйте .xls или .xlsx.")
                     return render(request, 'admin/upload_excel.html', {'form': form})
@@ -61,6 +63,7 @@ class ProductAdmin(admin.ModelAdmin):
                                 'cost_price': float(row['cost_price']),
                                 'order_quantity': int(row.get('order_quantity', 0)),
                                 'comment': str(row.get('comment', '')),
+                                'unique_number': int(row['unique_number']) if pd.notna(row.get('unique_number')) else None,
                             }
                             product, created = Product.objects.update_or_create(
                                 article=article,
@@ -88,3 +91,31 @@ class ProductAdmin(admin.ModelAdmin):
                 return render(request, 'admin/upload_excel.html', {'form': form})
         form = ExcelUploadForm()
         return render(request, 'admin/upload_excel.html', {'form': form})
+
+@admin.register(User)
+class CustomUserAdmin(UserAdmin):
+    list_display = ('username', 'email', 'first_name', 'last_name', 'date_joined', 'is_active', 'is_staff', 'get_unique_number')
+    list_filter = ('is_active', 'is_staff', 'date_joined')
+    search_fields = ('username', 'email', 'first_name', 'last_name', 'profile__unique_number')
+    ordering = ('-date_joined',)
+    fieldsets = (
+        (None, {'fields': ('username', 'password')}),
+        ('Персональная информация', {'fields': ('first_name', 'last_name', 'email')}),
+        ('Разрешения', {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
+        ('Важные даты', {'fields': ('last_login', 'date_joined')}),
+        ('Дополнительно', {'fields': ('profile',)}),
+    )
+
+    def get_unique_number(self, obj):
+        try:
+            return obj.profile.unique_number
+        except UserProfile.DoesNotExist:
+            return "—"
+    get_unique_number.short_description = "Уникальный номер"
+
+@admin.register(UserProfile)
+class UserProfileAdmin(admin.ModelAdmin):
+    list_display = ('user', 'unique_number', 'user__email', 'user__date_joined')
+    list_filter = ('user__is_active', 'user__is_staff')
+    search_fields = ('user__username', 'user__email', 'unique_number')
+    readonly_fields = ('user', 'unique_number')
