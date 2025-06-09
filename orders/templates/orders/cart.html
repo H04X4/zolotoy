@@ -1,0 +1,66 @@
+{% extends "orders/base.html" %}
+{% load static order_tags %}
+{% block content %}
+<div class="container">
+    <h1>Ваша корзина</h1>
+    <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+    {% if messages %}
+        <ul class="messages">
+            {% for message in messages %}
+                <li class="{{ message.tags }}">{{ message }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+    
+    {% if cart_items %}
+    <div class="table-container">
+        <table class="table" data-remove-from-cart-url="{% url 'remove_from_cart' %}">
+            <thead>
+                <tr>
+                    <th>Артикул</th>
+                    <th>Изображение</th>
+                    <th>Остаток</th>
+                    <th>Наличие</th>
+                    <th>Цена (₽)</th>
+                    <th>Количество</th>
+                    <th>Сумма (₽)</th>
+                    <th>Комментарий</th>
+                    <th>Действие</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in cart_items %}
+                <tr data-cart-item-id="{{ item.id }}">
+                    <td>{{ item.product.article }}</td>
+                    <td>
+                        <img src="{{ item.product.image|default:'https://via.placeholder.com/50' }}"
+                             alt="{{ item.product.article }}"
+                             class="product-image"
+                             onerror="this.src='https://via.placeholder.com/50';">
+                    </td>
+                    <td>{{ item.product.stock }}</td>
+                    <td>{{ item.product.store_presence }}</td>
+                    <td>{{ item.product.cost_price|floatformat:2 }}</td>
+                    <td>{{ item.quantity }}</td>
+                    <td>{{ item.quantity|multiply:item.product.cost_price|floatformat:2 }}</td>
+                    <td>{{ item.comment|default:"—" }}</td>
+                    <td>
+                        <button class="btn btn-danger remove-from-cart">Удалить</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="total-sum">
+        <span>Итоговая сумма: <span id="total-sum">{{ total_sum|floatformat:2 }}</span> ₽</span>
+        <a href="{% url 'order_list' %}" class="btn btn-primary">Вернуться к товарам</a>
+    </div>
+    {% else %}
+    <p class="no-data">Ваша корзина пуста.</p>
+    <a href="{% url 'order_list' %}" class="btn btn-primary">Перейти к товарам</a>
+    {% endif %}
+    <div class="loading-spinner">Загрузка...</div>
+</div>
+<script src="{% static 'js/scripts.js' %}"></script>
+{% endblock %}

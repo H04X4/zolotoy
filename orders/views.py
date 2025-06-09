@@ -1,12 +1,12 @@
 from django.shortcuts import render, redirect
-from .models import Product, UserProfile
+from .models import Product, UserProfile, CartItem
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import login, authenticate, logout
 from .forms import RegisterForm, LoginForm
 from django.contrib import messages
-from django.db.models import Max, Q
+from django.db.models import Max
 
 @login_required
 def order_list(request):
@@ -14,28 +14,14 @@ def order_list(request):
     if sort_by not in ['article', 'stock', 'cost_price', 'order_quantity']:
         sort_by = 'article'
     
-    # Поиск по артикулу
     search_query = request.GET.get('search', '').strip()
-    
-    # Фильтр по цене
     price_min = request.GET.get('price_min', '')
     price_max = request.GET.get('price_max', '')
     
-    # Фильтрация продуктов
-    if request.user.is_superuser:
-        products = Product.objects.all()
-    else:
-        try:
-            user_unique_number = request.user.profile.unique_number
-            products = Product.objects.filter(unique_number=user_unique_number)
-        except UserProfile.DoesNotExist:
-            products = Product.objects.none()
+    products = Product.objects.exclude(cartitem__isnull=False)
     
-    # Применение поиска по артикулу
     if search_query:
         products = products.filter(article__icontains=search_query)
-    
-    # Применение фильтра по цене
     if price_min:
         try:
             products = products.filter(cost_price__gte=float(price_min))
@@ -48,7 +34,6 @@ def order_list(request):
             pass
     
     products = products.order_by(sort_by)
-    print(f"DEBUG: Found {products.count()} products")
     total_sum = sum(p.order_quantity * p.cost_price for p in products)
     
     return render(request, 'orders/order_list.html', {
@@ -60,27 +45,54 @@ def order_list(request):
         'price_max': price_max,
     })
 
+@login_required
+def cart_view(request):
+    cart_items = CartItem.objects.filter(user=request.user).select_related('product')
+    total_sum = sum(item.quantity * item.product.cost_price for item in cart_items)
+    return render(request, 'orders/cart.html', {
+        'cart_items': cart_items,
+        'total_sum': total_sum,
+    })
+
 @require_POST
 @login_required
-def update_order(request):
+def add_to_cart(request):
     product_id = request.POST.get('product_id')
-    order_quantity = request.POST.get('order_quantity')
-    comment = request.POST.get('comment')
+    quantity = request.POST.get('quantity', 1)
+    comment = request.POST.get('comment', '')
     try:
         product = Product.objects.get(id=product_id)
-        if not request.user.is_superuser:
-            user_unique_number = request.user.profile.unique_number
-            if product.unique_number != user_unique_number:
-                return JsonResponse({'error': 'Нет доступа к этому продукту'}, status=403)
-        product.order_quantity = int(order_quantity)
-        product.comment = comment
-        product.save()
-        line_total = product.order_quantity * product.cost_price
-        if request.user.is_superuser:
-            total_sum = sum(p.order_quantity * p.cost_price for p in Product.objects.all())
-        else:
-            total_sum = sum(p.order_quantity * p.cost_price for p in Product.objects.filter(unique_number=user_unique_number))
-        return JsonResponse({'line_total': float(line_total), 'total_sum': float(total_sum)})
+        quantity = int(quantity)
+        if quantity < 1:
+            return JsonResponse({'error': 'Количество должно быть больше 0'}, status=400)
+        
+        cart_item, created = CartItem.objects.get_or_create(
+            user=request.user,
+            product=product,
+            defaults={'quantity': quantity, 'comment': comment}
+        )
+        if not created:
+            cart_item.quantity = quantity
+            cart_item.comment = comment
+            cart_item.save()
+        
+        return JsonResponse({'success': 'Товар добавлен в корзину', 'cart_item_id': cart_item.id})
+    except Product.DoesNotExist:
+        return JsonResponse({'error': 'Товар не найден'}, status=404)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=400)
+
+@require_POST
+@login_required
+def remove_from_cart(request):
+    cart_item_id = request.POST.get('cart_item_id')
+    try:
+        cart_item = CartItem.objects.get(id=cart_item_id, user=request.user)
+        cart_item.delete()
+        total_sum = sum(item.quantity * item.product.cost_price for item in CartItem.objects.filter(user=request.user))
+        return JsonResponse({'success': 'Товар удалён из корзины', 'total_sum': float(total_sum)})
+    except CartItem.DoesNotExist:
+        return JsonResponse({'error': 'Товар не найден в корзине'}, status=404)
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=400)
 

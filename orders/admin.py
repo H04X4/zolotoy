@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Product, UserProfile
+from .models import Product, UserProfile, CartItem
 import pandas as pd
 from django import forms
 from django.urls import path
@@ -16,7 +16,7 @@ class ExcelUploadForm(forms.Form):
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ['article', 'stock', 'store_presence', 'cost_price', 'order_quantity', 'comment', 'unique_number']
+    list_display = ['article', 'stock', 'store_presence', 'cost_price', 'order_quantity', 'comment']
     change_list_template = 'admin/product_change_list.html'
 
     def get_urls(self):
@@ -63,7 +63,6 @@ class ProductAdmin(admin.ModelAdmin):
                                 'cost_price': float(row['cost_price']),
                                 'order_quantity': int(row.get('order_quantity', 0)),
                                 'comment': str(row.get('comment', '')),
-                                'unique_number': int(row['unique_number']) if pd.notna(row.get('unique_number')) else None,
                             }
                             product, created = Product.objects.update_or_create(
                                 article=article,
@@ -119,3 +118,9 @@ class UserProfileAdmin(admin.ModelAdmin):
     list_filter = ('user__is_active', 'user__is_staff')
     search_fields = ('user__username', 'user__email', 'unique_number')
     readonly_fields = ('user', 'unique_number')
+
+@admin.register(CartItem)
+class CartItemAdmin(admin.ModelAdmin):
+    list_display = ('user', 'product', 'quantity', 'comment', 'added_at')
+    list_filter = ('user', 'added_at')
+    search_fields = ('user__username', 'product__article')

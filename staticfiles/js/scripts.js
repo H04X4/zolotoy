@@ -1,45 +1,88 @@
 document.addEventListener('DOMContentLoaded', function () {
-    const table = document.querySelector('table[data-update-url]');
-    if (!table) return;
-
-    const updateUrl = table.dataset.updateUrl;
+    const addToCartButtons = document.querySelectorAll('.add-to-cart');
+    const removeFromCartButtons = document.querySelectorAll('.remove-from-cart');
     const csrfToken = document.querySelector('input[name="csrfmiddlewaretoken"]').value;
 
-    function updateRow(row, productId, orderQuantity, comment) {
-        row.classList.add('updating');
-        fetch(updateUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'X-CSRFToken': csrfToken,
-            },
-            body: `product_id=${productId}&order_quantity=${orderQuantity}&comment=${encodeURIComponent(comment)}`
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.error) {
-                alert('Ошибка: ' + data.error);
-                return;
-            }
-            row.querySelector('.line-total').textContent = data.line_total.toFixed(2);
-            document.getElementById('total-sum').textContent = data.total_sum.toFixed(2);
-            row.classList.remove('updating');
-            row.classList.add('updated');
-            setTimeout(() => row.classList.remove('updated'), 1000);
-        })
-        .catch(error => {
-            alert('Ошибка: ' + error);
-            row.classList.remove('updating');
-        });
+    function showNotification(message, type = 'success') {
+        const notification = document.createElement('div');
+        notification.className = `notification ${type}`;
+        notification.textContent = message;
+        document.body.appendChild(notification);
+        setTimeout(() => notification.remove(), 3000);
     }
 
-    table.addEventListener('change', function (e) {
-        if (e.target.classList.contains('order-quantity') || e.target.classList.contains('comment')) {
-            const row = e.target.closest('tr');
+    addToCartButtons.forEach(button => {
+        button.addEventListener('click', function () {
+            const row = this.closest('tr');
             const productId = row.dataset.productId;
-            const orderQuantity = row.querySelector('.order-quantity').value;
-            const comment = row.querySelector('.comment').value;
-            updateRow(row, productId, orderQuantity, comment);
-        }
+            const quantity = row.querySelector('.quantity-input').value;
+            const comment = row.querySelector('.comment-input').value;
+            const addToCartUrl = document.querySelector('table').dataset.addToCartUrl;
+
+            button.disabled = true;
+            row.classList.add('loading');
+            fetch(addToCartUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': csrfToken,
+                },
+                body: `product_id=${encodeURIComponent(productId)}&quantity=${encodeURIComponent(quantity)}&comment=${encodeURIComponent(comment)}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    showNotification(data.error, 'error');
+                    return;
+                }
+                row.remove();
+                showNotification(data.success);
+                button.disabled = false;
+                row.classList.remove('loading');
+            })
+            .catch(error => {
+                showNotification('Ошибка: ' + error, 'error');
+                button.disabled = false;
+                row.classList.remove('loading');
+            });
+        });
+    });
+
+    removeFromCartButtons.forEach(button => {
+        button.addEventListener('click', function () {
+            const row = this.closest('tr');
+            const cartItemId = row.dataset.cartItemId;
+            const removeFromCartUrl = document.querySelector('table').dataset.removeFromCartUrl;
+
+            button.disabled = true;
+            row.classList.add('loading');
+            fetch(removeFromCartUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': csrfToken,
+                },
+                body: `cart_item_id=${cartItemId}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    showNotification(data.error, 'error');
+                    button.disabled = false;
+                    row.classList.remove('loading');
+                    return;
+                }
+                row.remove();
+                document.querySelector('#total-sum').textContent = data.total_sum.toFixed(2);
+                showNotification(data.success);
+                button.disabled = false;
+                row.classList.remove('loading');
+            })
+            .catch(error => {
+                showNotification('Ошибка: ' + error, 'error');
+                button.disabled = false;
+                row.classList.remove('loading');
+            });
+        });
     });
 });
