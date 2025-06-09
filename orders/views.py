@@ -108,11 +108,10 @@ def update_quantity(request):
         if quantity < 1:
             return JsonResponse({'error': 'Количество должно быть больше 0'}, status=400)
         
-        # Обновляем order_quantity в Product для отображения в order_list.html
         product.order_quantity = quantity
         product.save()
         
-        # Пересчитываем итоговую сумму для товаров, не в корзине
+        
         total_sum = sum(p.order_quantity * p.cost_price for p in Product.objects.exclude(cartitem__isnull=False) if p.order_quantity > 0)
         return JsonResponse({'success': 'Количество обновлено', 'total_sum': float(total_sum)})
     except Product.DoesNotExist:
