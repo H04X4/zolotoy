@@ -11,16 +11,37 @@
             {% endfor %}
         </ul>
     {% endif %}
+    
+    <!-- Форма поиска и фильтра -->
+    <div class="filter-container">
+        <form method="get" class="filter-form">
+            <div class="filter-group">
+                <label for="search">Поиск по артикулу:</label>
+                <input type="text" id="search" name="search" value="{{ search_query }}" placeholder="Введите артикул">
+            </div>
+            <div class="filter-group">
+                <label for="price_min">Цена от:</label>
+                <input type="number" id="price_min" name="price_min" value="{{ price_min }}" placeholder="Мин. цена" step="0.01" min="0">
+            </div>
+            <div class="filter-group">
+                <label for="price_max">Цена до:</label>
+                <input type="number" id="price_max" name="price_max" value="{{ price_max }}" placeholder="Макс. цена" step="0.01" min="0">
+            </div>
+            <button type="submit" class="btn btn-primary">Применить</button>
+            <a href="{% url 'order_list' %}" class="btn btn-secondary">Сбросить</a>
+        </form>
+    </div>
+
     {% if products %}
     <table data-update-url="{% url 'update_order' %}">
         <thead>
             <tr>
-                <th><a href="?sort=article" class="{% if sort_by == 'article' %}active{% endif %}">Артикул</a></th>
+                <th><a href="?sort=article{% if search_query %}&search={{ search_query }}{% endif %}{% if price_min %}&price_min={{ price_min }}{% endif %}{% if price_max %}&price_max={{ price_max }}{% endif %}" class="{% if sort_by == 'article' %}active{% endif %}">Артикул</a></th>
                 <th>Изображение</th>
-                <th><a href="?sort=stock" class="{% if sort_by == 'stock' %}active{% endif %}">Остаток</a></th>
+                <th><a href="?sort=stock{% if search_query %}&search={{ search_query }}{% endif %}{% if price_min %}&price_min={{ price_min }}{% endif %}{% if price_max %}&price_max={{ price_max }}{% endif %}" class="{% if sort_by == 'stock' %}active{% endif %}">Остаток</a></th>
                 <th>Наличие в магазинах</th>
-                <th><a href="?sort=cost_price" class="{% if sort_by == 'cost_price' %}active{% endif %}">Себестоимость (руб.)</a></th>
-                <th><a href="?sort=order_quantity" class="{% if sort_by == 'order_quantity' %}active{% endif %}">Количество для заказа</a></th>
+                <th><a href="?sort=cost_price{% if search_query %}&search={{ search_query }}{% endif %}{% if price_min %}&price_min={{ price_min }}{% endif %}{% if price_max %}&price_max={{ price_max }}{% endif %}" class="{% if sort_by == 'cost_price' %}active{% endif %}">Себестоимость (руб.)</a></th>
+                <th><a href="?sort=order_quantity{% if search_query %}&search={{ search_query }}{% endif %}{% if price_min %}&price_min={{ price_min }}{% endif %}{% if price_max %}&price_max={{ price_max }}{% endif %}" class="{% if sort_by == 'order_quantity' %}active{% endif %}">Количество для заказа</a></th>
                 <th>Сумма строки (руб.)</th>
                 <th>Комментарий</th>
                 <th>Уникальный номер</th>

@@ -6,29 +6,58 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth import login, authenticate, logout
 from .forms import RegisterForm, LoginForm
 from django.contrib import messages
-from django.db.models import Max
+from django.db.models import Max, Q
 
 @login_required
 def order_list(request):
     sort_by = request.GET.get('sort', 'article')
     if sort_by not in ['article', 'stock', 'cost_price', 'order_quantity']:
         sort_by = 'article'
-
+    
+    # Поиск по артикулу
+    search_query = request.GET.get('search', '').strip()
+    
+    # Фильтр по цене
+    price_min = request.GET.get('price_min', '')
+    price_max = request.GET.get('price_max', '')
+    
+    # Фильтрация продуктов
     if request.user.is_superuser:
-        products = Product.objects.all()  
+        products = Product.objects.all()
     else:
         try:
             user_unique_number = request.user.profile.unique_number
             products = Product.objects.filter(unique_number=user_unique_number)
         except UserProfile.DoesNotExist:
-            products = Product.objects.none()  
+            products = Product.objects.none()
+    
+    # Применение поиска по артикулу
+    if search_query:
+        products = products.filter(article__icontains=search_query)
+    
+    # Применение фильтра по цене
+    if price_min:
+        try:
+            products = products.filter(cost_price__gte=float(price_min))
+        except ValueError:
+            pass
+    if price_max:
+        try:
+            products = products.filter(cost_price__lte=float(price_max))
+        except ValueError:
+            pass
+    
     products = products.order_by(sort_by)
     print(f"DEBUG: Found {products.count()} products")
     total_sum = sum(p.order_quantity * p.cost_price for p in products)
+    
     return render(request, 'orders/order_list.html', {
         'products': products,
         'total_sum': total_sum,
-        'sort_by': sort_by
+        'sort_by': sort_by,
+        'search_query': search_query,
+        'price_min': price_min,
+        'price_max': price_max,
     })
 
 @require_POST
@@ -39,7 +68,6 @@ def update_order(request):
     comment = request.POST.get('comment')
     try:
         product = Product.objects.get(id=product_id)
-        # Проверка, что пользователь имеет доступ к продукту
         if not request.user.is_superuser:
             user_unique_number = request.user.profile.unique_number
             if product.unique_number != user_unique_number:

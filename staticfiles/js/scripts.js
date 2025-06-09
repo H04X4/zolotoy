@@ -1,31 +1,45 @@
-$(document).ready(function() {
-    $('.order-quantity, .comment').on('change', function() {
-        var row = $(this).closest('tr');
-        var productId = row.data('product-id');
-        var orderQuantity = row.find('.order-quantity').val();
-        var comment = row.find('.comment').val();
-        var updateUrl = $('table').data('update-url');
+document.addEventListener('DOMContentLoaded', function () {
+    const table = document.querySelector('table[data-update-url]');
+    if (!table) return;
 
-        row.addClass('updating');
-        $.ajax({
-            url: updateUrl,
-            type: 'POST',
-            data: {
-                product_id: productId,
-                order_quantity: orderQuantity,
-                comment: comment,
-                csrfmiddlewaretoken: $('input[name="csrfmiddlewaretoken"]').val()
+    const updateUrl = table.dataset.updateUrl;
+    const csrfToken = document.querySelector('input[name="csrfmiddlewaretoken"]').value;
+
+    function updateRow(row, productId, orderQuantity, comment) {
+        row.classList.add('updating');
+        fetch(updateUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': csrfToken,
             },
-            success: function(data) {
-                row.find('.line-total').text(data.line_total.toFixed(2));
-                $('#total-sum').text(data.total_sum.toFixed(2));
-                row.removeClass('updating').addClass('updated');
-                setTimeout(() => row.removeClass('updated'), 1000);
-            },
-            error: function(xhr) {
-                row.removeClass('updating');
-                alert('Ошибка при обновлении данных: ' + xhr.statusText);
+            body: `product_id=${productId}&order_quantity=${orderQuantity}&comment=${encodeURIComponent(comment)}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert('Ошибка: ' + data.error);
+                return;
             }
+            row.querySelector('.line-total').textContent = data.line_total.toFixed(2);
+            document.getElementById('total-sum').textContent = data.total_sum.toFixed(2);
+            row.classList.remove('updating');
+            row.classList.add('updated');
+            setTimeout(() => row.classList.remove('updated'), 1000);
+        })
+        .catch(error => {
+            alert('Ошибка: ' + error);
+            row.classList.remove('updating');
         });
+    }
+
+    table.addEventListener('change', function (e) {
+        if (e.target.classList.contains('order-quantity') || e.target.classList.contains('comment')) {
+            const row = e.target.closest('tr');
+            const productId = row.dataset.productId;
+            const orderQuantity = row.querySelector('.order-quantity').value;
+            const comment = row.querySelector('.comment').value;
+            updateRow(row, productId, orderQuantity, comment);
+        }
     });
 });

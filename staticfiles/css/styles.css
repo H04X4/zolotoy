@@ -63,7 +63,7 @@ tr:hover {
     background-color: #f9f9f9;
 }
 
-input[type="number"], textarea {
+input[type="number"], input[type="text"], textarea {
     width: 100%;
     padding: 8px;
     border: 1px solid #ddd;
@@ -71,7 +71,7 @@ input[type="number"], textarea {
     transition: border-color 0.3s;
 }
 
-input[type="number"]:focus, textarea:focus {
+input[type="number"]:focus, input[type="text"]:focus, textarea:focus {
     border-color: #1a73e8;
     outline: none;
 }
@@ -90,21 +90,95 @@ textarea {
 
 tr.updating {
     background-color: #e8f0fe;
+    transition: background-color 0.3s;
 }
 
 tr.updated {
     background-color: #d4edda;
+    transition: background-color 0.3s;
 }
 
-@media (max-width: 768px) {
-    table {
-        display: block;
-        overflow-x: auto;
-    }
-    th, td {
-        min-width: 100px;
-    }
-    h1, h2 {
-        font-size: 1.2em;
-    }
+.no-data {
+    text-align: center;
+    color: #777;
+    font-size: 1.2em;
+    margin: 20px 0;
+}
+
+.loading-spinner {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.7);
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 4px;
+}
+
+/* Стили для формы фильтра */
+.filter-container {
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #f9f9f9;
+    border-radius: 8px;
+    box-shadow: 0 1px 5px rgba(0, 0, 0, 0.1);
+}
+
+.filter-form {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+    align-items: flex-end;
+}
+
+.filter-group {
+    flex: 1;
+    min-width: 150px;
+}
+
+.filter-group label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 5px;
+    color: #333;
+}
+
+.filter-group input {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    transition: border-color 0.3s;
+}
+
+.filter-group input:focus {
+    border-color: #1a73e8;
+}
+
+.btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.3s;
+}
+
+.btn-primary {
+    background-color: #1a73e8;
+    color: #fff;
+}
+
+.btn-primary:hover {
+    background-color: #1557b0;
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+    color: #fff;
+}
+
+.btn-secondary:hover {
+    background-color: #5a6268;
 }
