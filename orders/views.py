@@ -13,15 +13,15 @@ def order_list(request):
     sort_by = request.GET.get('sort', 'article')
     if sort_by not in ['article', 'stock', 'cost_price', 'order_quantity']:
         sort_by = 'article'
-    # Фильтрация продуктов по уникальному номеру пользователя
+
     if request.user.is_superuser:
-        products = Product.objects.all()  # Админы видят все продукты
+        products = Product.objects.all()  
     else:
         try:
             user_unique_number = request.user.profile.unique_number
             products = Product.objects.filter(unique_number=user_unique_number)
         except UserProfile.DoesNotExist:
-            products = Product.objects.none()  # Если профиля нет, показываем пустой список
+            products = Product.objects.none()  
     products = products.order_by(sort_by)
     print(f"DEBUG: Found {products.count()} products")
     total_sum = sum(p.order_quantity * p.cost_price for p in products)
