@@ -83,8 +83,8 @@ document.addEventListener('DOMContentLoaded', function () {
             e.preventDefault();
             console.log('Remove from cart clicked');
             const row = this.closest('tr');
-            const cartItemId = row.dataset.rowId;
-            const removeFromCartUrl = table.dataset.removeFromCart;
+            const cartItemId = button.dataset.cartItemId || row.dataset.cartItemId;
+            const removeFromCartUrl = table.dataset.removeFromCartUrl;
 
             if (!cartItemId || !removeFromCartUrl) {
                 console.error('Missing data:', { cartItemId, removeFromCartUrl });
@@ -111,6 +111,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 console.log('Response data:', data);
                 if (data.error) {
                     showNotification(data.error, 'error');
+                    button.disabled = false;
+                    row.classList.remove('loading');
                     return;
                 }
                 row.remove();

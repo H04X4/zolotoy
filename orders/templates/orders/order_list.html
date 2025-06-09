@@ -33,7 +33,7 @@
 
     {% if products %}
     <div class="table-container">
-        <table class="table" data-add-to-cart-url="{% url 'add_to_cart' %}">
+        <table class="table" data-add-to-cart-url="{% url 'add_to_cart' %}" data-update-quantity-url="{% url 'update_quantity' %}">
             <thead>
                 <tr>
                     <th><a href="?sort=article{% if search_query %}&search={{ search_query }}{% endif %}{% if price_min %}&price_min={{ price_min }}{% endif %}{% if price_max %}&price_max={{ price_max }}{% endif %}" class="{% if sort_by == 'article' %}active{% endif %}">Артикул</a></th>
@@ -60,7 +60,11 @@
                     <td>{{ product.store_presence }}</td>
                     <td>{{ product.cost_price|floatformat:2 }}</td>
                     <td>
-                        <input type="number" class="quantity-input" value="1" min="1">
+                        <div class="quantity-control">
+                      
+                            <input type="number" class="quantity-input" value="{{ product.order_quantity|default:1 }}" min="1" data-product-id="{{ product.id }}">
+               
+                        </div>
                     </td>
                     <td>
                         <textarea class="comment-input" placeholder="Комментарий"></textarea>

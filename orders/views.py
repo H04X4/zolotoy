@@ -34,7 +34,7 @@ def order_list(request):
             pass
     
     products = products.order_by(sort_by)
-    total_sum = sum(p.order_quantity * p.cost_price for p in products)
+    total_sum = sum(p.order_quantity * p.cost_price for p in products if p.order_quantity > 0)
     
     return render(request, 'orders/order_list.html', {
         'products': products,
@@ -76,7 +76,8 @@ def add_to_cart(request):
             cart_item.comment = comment
             cart_item.save()
         
-        return JsonResponse({'success': 'Товар добавлен в корзину', 'cart_item_id': cart_item.id})
+        total_sum = sum(p.order_quantity * p.cost_price for p in Product.objects.exclude(cartitem__isnull=False) if p.order_quantity > 0)
+        return JsonResponse({'success': 'Товар добавлен в корзину', 'cart_item_id': cart_item.id, 'total_sum': float(total_sum)})
     except Product.DoesNotExist:
         return JsonResponse({'error': 'Товар не найден'}, status=404)
     except Exception as e:
@@ -93,6 +94,29 @@ def remove_from_cart(request):
         return JsonResponse({'success': 'Товар удалён из корзины', 'total_sum': float(total_sum)})
     except CartItem.DoesNotExist:
         return JsonResponse({'error': 'Товар не найден в корзине'}, status=404)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=400)
+
+@require_POST
+@login_required
+def update_quantity(request):
+    product_id = request.POST.get('product_id')
+    quantity = request.POST.get('quantity')
+    try:
+        product = Product.objects.get(id=product_id)
+        quantity = int(quantity)
+        if quantity < 1:
+            return JsonResponse({'error': 'Количество должно быть больше 0'}, status=400)
+        
+        # Обновляем order_quantity в Product для отображения в order_list.html
+        product.order_quantity = quantity
+        product.save()
+        
+        # Пересчитываем итоговую сумму для товаров, не в корзине
+        total_sum = sum(p.order_quantity * p.cost_price for p in Product.objects.exclude(cartitem__isnull=False) if p.order_quantity > 0)
+        return JsonResponse({'success': 'Количество обновлено', 'total_sum': float(total_sum)})
+    except Product.DoesNotExist:
+        return JsonResponse({'error': 'Товар не найден'}, status=404)
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=400)
 

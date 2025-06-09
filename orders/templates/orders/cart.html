@@ -45,7 +45,7 @@
                     <td>{{ item.quantity|multiply:item.product.cost_price|floatformat:2 }}</td>
                     <td>{{ item.comment|default:"—" }}</td>
                     <td>
-                        <button class="btn btn-danger remove-from-cart">Удалить</button>
+                        <button class="btn btn-danger remove-from-cart" data-cart-item-id="{{ item.id }}">Удалить</button>
                     </td>
                 </tr>
                 {% endfor %}
